@@ -1,7 +1,28 @@
 {
   "name": "discord-bot",
   "version": "1.0.0",
+  "description": "Discord Bot mit 2 parallelen Systemen, unterschiedliche Kategorien, Buttons und Move-Funktion",
   "main": "index.js",
-  "scripts": { "start": "node index.js" },
-  "dependencies": { "discord.js": "^14.14.1" }
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.14.1"
+  },
+  "engines": {
+    "node": "18.x"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DEIN_USERNAME/DEIN_REPO.git"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "voice",
+    "support",
+    "ticket"
+  ],
+  "author": "Dein Name",
+  "license": "MIT"
 }
