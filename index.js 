@@ -1,1 +1,105 @@
+const { 
+  Client, 
+  GatewayIntentBits, 
+  EmbedBuilder, 
+  ButtonBuilder, 
+  ButtonStyle, 
+  ActionRowBuilder 
+} = require('discord.js');
 
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers
+  ]
+});
+
+// 🔧 DEINE IDs
+const AUSBILDUNG_ROLE = '1495030486118961163';
+const SOLDAT_ROLE = '1495030398357475410';
+const EMBED_CHANNEL_ID = '1495369147838890177';
+const LOG_CHANNEL_ID = '1495018381240434718';
+
+client.once('ready', () => {
+  console.log(`✅ Eingeloggt als ${client.user.tag}`);
+});
+
+// 👀 Trigger: Rolle wird vergeben
+client.on('guildMemberUpdate', async (oldMember, newMember) => {
+  const hadRole = oldMember.roles.cache.has(AUSBILDUNG_ROLE);
+  const hasRole = newMember.roles.cache.has(AUSBILDUNG_ROLE);
+
+  if (!hadRole && hasRole) {
+    const channel = await client.channels.fetch(EMBED_CHANNEL_ID);
+
+    const embed = new EmbedBuilder()
+      .setTitle('Ausbildung')
+      .setDescription(`${newMember} benötigt Ausbildung`)
+      .setColor(0x3498db)
+      .setTimestamp();
+
+    const button = new ButtonBuilder()
+      .setCustomId(`finish_${newMember.id}`)
+      .setLabel('Ausbildung abschließen')
+      .setStyle(ButtonStyle.Success);
+
+    const row = new ActionRowBuilder().addComponents(button);
+
+    await channel.send({
+      embeds: [embed],
+      components: [row]
+    });
+  }
+});
+
+// 🔘 Button Logik
+client.on('interactionCreate', async interaction => {
+  if (!interaction.isButton()) return;
+
+  if (interaction.customId.startsWith('finish_')) {
+    const userId = interaction.customId.split('_')[1];
+    const member = await interaction.guild.members.fetch(userId);
+
+    if (!member) {
+      return interaction.reply({ content: 'User nicht gefunden.', ephemeral: true });
+    }
+
+    try {
+      // Rollen ändern
+      await member.roles.remove(AUSBILDUNG_ROLE);
+      await member.roles.add(SOLDAT_ROLE);
+
+      // Nachricht löschen
+      await interaction.message.delete();
+
+      // Bestätigung im Channel
+      await interaction.channel.send({
+        content: `✅ ${member.user.tag} ist jetzt Soldat!`
+      });
+
+      // 📊 Log Channel
+      const logChannel = await interaction.guild.channels.fetch(LOG_CHANNEL_ID);
+
+      if (logChannel) {
+        await logChannel.send({
+          content:
+`# Uprank
+Wer: ${member}
+Von: <@&${AUSBILDUNG_ROLE}>
+Auf: <@&${SOLDAT_ROLE}>
+Grund: Ausbildung bestanden
+Bearbeitet von: ${interaction.user}`
+        });
+      }
+
+    } catch (err) {
+      console.error(err);
+      await interaction.reply({
+        content: '❌ Fehler beim Rollen ändern.',
+        ephemeral: true
+      });
+    }
+  }
+});
+
+client.login(process.env.TOKEN);
